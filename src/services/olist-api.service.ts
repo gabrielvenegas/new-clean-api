@@ -1,42 +1,5 @@
-export interface OlistCustomer {
-  contato: OlistContactDetails;
-}
-
-export interface OlistContactDetails {
-  id: string;
-  codigo: string;
-  nome: string;
-  fantasia: string;
-  tipo_pessoa: string;
-  cpf_cnpj: string;
-  endereco: string;
-  numero: string;
-  complemento: string;
-  bairro: string;
-  cep: string;
-  cidade: string;
-  uf: string;
-  email: string;
-  fone: string;
-  id_lista_preco: number;
-  id_vendedor: string;
-  nome_vendedor: string;
-  situacao: string;
-  data_criacao: string;
-}
-
-interface OlistApiResponse<T, K extends string> {
-  retorno: {
-    status_processamento: string;
-    status: string;
-    pagina: number;
-    numero_paginas: number;
-  } & Record<K, T[]>;
-}
-
-type CustomersResponse = OlistApiResponse<OlistCustomer, "contatos">;
-// type OrdersResponse = OlistApiResponse<Order, "pedidos">;
-// type ProductsResponse = OlistApiResponse<Product, "produtos">;
+import type { CustomersResponse, OlistCustomer } from "@/types/olist/contact";
+import type { OrderResponse } from "@/types/olist/order";
 
 export class OlistApiService {
   private baseUrl = process.env.OLIST_API_URL || "https://api.tiny.com.br/api2";
@@ -73,13 +36,11 @@ export class OlistApiService {
     }
   }
 
-  async fetchCustomerOrders(customerId: string, page = 1, limit = 50) {
-    // We'll implement this next for the order worker
-    const url = `${this.baseUrl}/customers/${customerId}/orders?page=${page}&limit=${limit}`;
+  async fetchCustomerOrders(customerName: string, page = 1, limit = 50) {
+    const url = `${this.baseUrl}/pedidos.pesquisa.php?token=${this.apiKey}&formato=JSON&cliente=${customerName}&pagina=${page}`;
 
     const response = await fetch(url, {
       headers: {
-        Authorization: `Bearer ${this.apiKey}`,
         "Content-Type": "application/json",
       },
     });
@@ -89,6 +50,25 @@ export class OlistApiService {
       throw new Error(`API Error: ${response.status}`);
     }
 
-    return response.json();
+    const data = (await response.json()) as OrderResponse;
+    return data;
+  }
+
+  async fetchCustomerById(customerId: string) {
+    const url = `${this.baseUrl}/contato.obter.php?token=${this.apiKey}&formato=JSON&id=${customerId}`;
+
+    const response = await fetch(url, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 429) throw new Error("RATE_LIMITED");
+      throw new Error(`API Error: ${response.status}`);
+    }
+
+    const data = (await response.json()) as { retorno: OlistCustomer };
+    return data;
   }
 }

@@ -9,6 +9,7 @@ export const batchInsert = mutation({
         one_month_margin_percentage: v.optional(v.number()),
         one_year_margin_percentage: v.optional(v.number()),
         historical_margin_percentage: v.optional(v.number()),
+        is_active: v.boolean(),
         created_at: v.number(),
         updated_at: v.number(),
       }),
@@ -107,16 +108,34 @@ export const getOutdatedCustomers = query({
     const now = Date.now();
     const thresholdTimestamp = now - stalenessThreshold;
 
-    // Fetch customers whose margins are older than the threshold OR have never been calculated
     return await ctx.db
       .query("customers")
       .withIndex("by_margins_outdated")
       .filter((q) =>
-        q.or(
-          q.lt(q.field("margins_last_calculated"), thresholdTimestamp),
-          q.eq(q.field("margins_last_calculated"), undefined),
+        q.and(
+          q.neq(q.field("is_active"), false),
+          q.or(
+            q.lt(q.field("margins_last_calculated"), thresholdTimestamp),
+            q.eq(q.field("margins_last_calculated"), undefined),
+          ),
         ),
       )
       .take(limit);
+  },
+});
+
+export const deactivateCustomer = mutation({
+  args: {
+    id: v.id("customers"),
+  },
+  handler: async (ctx, { id }) => {
+    try {
+      return await ctx.db.patch(id, {
+        is_active: false,
+        updated_at: Date.now(),
+      });
+    } catch (error) {
+      throw new Error(`Failed to deactivate customer: ${error}`);
+    }
   },
 });

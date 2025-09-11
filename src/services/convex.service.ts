@@ -1,6 +1,7 @@
 import type { Customer } from "../types/customer.js";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "../../convex/_generated/api.js"; // Missing import!
+import type { Id } from "../../convex/_generated/dataModel.js";
 
 export class ConvexService {
   private client: ConvexHttpClient;
@@ -43,6 +44,17 @@ export class ConvexService {
     }
   }
 
+  async getPendingMarginCustomers() {
+    try {
+      return await this.client.query(api.customer.getOutdatedCustomers, {
+        stalenessThreshold: 4 * 60 * 60 * 1000,
+        limit: 300,
+      });
+    } catch (error) {
+      throw new Error(`Failed to get pending margin customers: ${error}`);
+    }
+  }
+
   async updateCustomerMargins(
     olistCustomerId: string,
     margins: {
@@ -58,6 +70,16 @@ export class ConvexService {
       });
     } catch (error) {
       throw new Error(`Failed to update customer margins: ${error}`);
+    }
+  }
+
+  async deactivateCustomer(id: Id<"customers">) {
+    try {
+      return await this.client.mutation(api.customer.deactivateCustomer, {
+        id,
+      });
+    } catch (error) {
+      throw new Error(`Failed to deactivate customer: ${error}`);
     }
   }
 }

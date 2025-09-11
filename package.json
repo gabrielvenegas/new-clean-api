@@ -16,6 +16,7 @@
     "convex:codegen": "convex codegen"
   },
   "dependencies": {
+    "@novu/api": "^1.6.0",
     "bullmq": "^5.0.0",
     "convex": "^1.27.0",
     "fastify": "^4.24.3",

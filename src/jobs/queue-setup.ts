@@ -3,6 +3,8 @@ import Redis from "ioredis";
 import { JobType } from "../types/job.js";
 import { processCustomers } from "../workers/customer.worker.js";
 import { logger } from "../utils/logger.js";
+import { processCustomerOrders } from "@/workers/order.worker.js";
+import { queuePendingOrderJobs } from "@/workers/order-orchestrator.worker.js";
 
 let redisConnection: Redis | null = null;
 const workers: Worker[] = [];
@@ -69,6 +71,14 @@ export const queues = {
       attempts: 3,
     },
   }),
+  [JobType.QUEUE_PENDING_ORDERS]: new Queue(JobType.QUEUE_PENDING_ORDERS, {
+    connection: getRedisConnection(),
+    defaultJobOptions: {
+      removeOnComplete: 5,
+      removeOnFail: 10,
+      attempts: 2,
+    },
+  }),
 };
 
 export async function setupQueues(): Promise<void> {
@@ -101,7 +111,29 @@ export async function setupQueues(): Promise<void> {
       },
     );
 
-    workers.push(customerWorker);
+    const customerOrdersWorker = new Worker(
+      JobType.FETCH_CUSTOMER_ORDERS,
+      processCustomerOrders,
+      {
+        connection: getRedisConnection(),
+        concurrency: 1,
+        limiter: {
+          max: 5,
+          duration: 60 * 1000,
+        },
+      },
+    );
+
+    const orchestratorWorker = new Worker(
+      JobType.QUEUE_PENDING_ORDERS,
+      queuePendingOrderJobs,
+      {
+        connection: getRedisConnection(),
+        concurrency: 1,
+      },
+    );
+
+    workers.push(...[customerWorker, customerOrdersWorker, orchestratorWorker]);
 
     // biome-ignore lint/complexity/noForEach: <explanation>
     workers.forEach((worker) => {
@@ -140,11 +172,12 @@ export async function closeQueues(): Promise<void> {
 
   logger.info("🔄 Closing queues...");
   for (const queue of Object.values(queues)) {
+    await queue.drain(true);
     await queue.close();
   }
 
   if (redisConnection) {
-    await redisConnection.disconnect();
+    await redisConnection.quit();
     redisConnection = null;
   }
 

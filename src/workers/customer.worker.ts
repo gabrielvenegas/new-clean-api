@@ -33,31 +33,13 @@ export async function processCustomers(
 
     const transformedCustomers = companies.map((company) => ({
       olist_customer_id: company?.contato?.id,
+      is_active: true,
       created_at: Date.now(),
       updated_at: Date.now(),
     }));
 
     await convexService.saveCustomers(transformedCustomers);
     logger.info(`Saved ${transformedCustomers.length} customers to Convex`);
-
-    // Queue order fetching jobs for each customer
-    // const orderJobs = customers.map((customer) => ({
-    //   name: `fetch-orders-${customer.customer_id}`,
-    //   data: {
-    //     id: `orders-${customer.customer_id}-${Date.now()}`,
-    //     customerId: customer.customer_id,
-    //     page: 1,
-    //     limit: 50,
-    //     createdAt: new Date(),
-    //   } as FetchCustomerOrdersJobData,
-    //   opts: {
-    //     delay: Math.random() * 5000, // Random delay 0-5s to spread load
-    //   },
-    // }));
-
-    // Add order jobs to queue
-    // await queues[JobType.FETCH_CUSTOMER_ORDERS].addBulk(orderJobs);
-    // logger.info(`Queued ${orderJobs.length} order fetch jobs`);
 
     if (response.retorno.pagina < response.retorno.numero_paginas) {
       const nextPageJob = {

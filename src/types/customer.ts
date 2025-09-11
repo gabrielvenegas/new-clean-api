@@ -3,6 +3,7 @@ export interface Customer {
   one_month_margin_percentage?: number;
   one_year_margin_percentage?: number;
   historical_margin_percentage?: number;
+  is_active: boolean;
   created_at: number;
   updated_at: number;
 }
