@@ -1,7 +1,8 @@
-import type { Customer } from "../types/customer.js";
+import type { Order } from "@/types/order.js";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "../../convex/_generated/api.js"; // Missing import!
 import type { Id } from "../../convex/_generated/dataModel.js";
+import type { Customer } from "../types/customer.js";
 
 export class ConvexService {
   private client: ConvexHttpClient;
@@ -14,7 +15,18 @@ export class ConvexService {
     this.client = new ConvexHttpClient(deploymentUrl);
   }
 
-  async saveCustomers(customers: Customer[]): Promise<string[]> {
+  async getCustomerById(id: Id<"customers">) {
+    try {
+      const customer = await this.client.query(api.customer.getCustomerById, {
+        id,
+      });
+      return customer;
+    } catch (error) {
+      throw new Error(`Failed to get customer by ID: ${error}`);
+    }
+  }
+
+  async saveCustomers(customers: Customer[]) {
     try {
       // Use the generated API, not string paths
       return await this.client.mutation(api.customer.batchInsert, {
@@ -80,6 +92,36 @@ export class ConvexService {
       });
     } catch (error) {
       throw new Error(`Failed to deactivate customer: ${error}`);
+    }
+  }
+
+  async storeOrders(customerId: string, orders: Order[]) {
+    try {
+      return await this.client.mutation(api.order.batchInsert, {
+        orders,
+      });
+    } catch (error) {
+      throw new Error(`Failed to store orders: ${error}`);
+    }
+  }
+
+  async getOrdersByCustomerId(customerId: Id<"customers">) {
+    try {
+      return await this.client.query(api.order.getByCustomerId, {
+        customerId,
+      });
+    } catch (error) {
+      throw new Error(`Failed to get orders by customer ID: ${error}`);
+    }
+  }
+
+  async updateOrderMargins(orders: { id: Id<"orders">; margin: number }[]) {
+    try {
+      return await this.client.mutation(api.order.updateOrderMargin, {
+        orders,
+      });
+    } catch (error) {
+      throw new Error(`Failed to update order margins: ${error}`);
     }
   }
 }

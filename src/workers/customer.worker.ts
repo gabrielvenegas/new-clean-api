@@ -1,9 +1,13 @@
-import { OlistApiService } from "../services/olist-api.service.js";
-import { ConvexService } from "../services/convex.service.js";
-import { queues } from "../jobs/queue-setup.js";
-import { logger } from "../utils/logger.js";
-import { JobType, type FetchCustomersJobData } from "@/types/job.js";
+import {
+  JobType,
+  type FetchCustomerOrdersJobData,
+  type FetchCustomersJobData,
+} from "@/types/job.js";
 import type { Job } from "bullmq";
+import { queues } from "../jobs/queue-setup.js";
+import { ConvexService } from "../services/convex.service.js";
+import { OlistApiService } from "../services/olist-api.service.js";
+import { logger } from "../utils/logger.js";
 
 const olistApi = new OlistApiService();
 const convexService = new ConvexService();
@@ -38,8 +42,27 @@ export async function processCustomers(
       updated_at: Date.now(),
     }));
 
-    await convexService.saveCustomers(transformedCustomers);
+    const savedCustomers =
+      await convexService.saveCustomers(transformedCustomers);
     logger.info(`Saved ${transformedCustomers.length} customers to Convex`);
+
+    const orderJobs = savedCustomers.map((customer, index) => ({
+      name: `fetch-orders-${customer}`,
+      data: {
+        customerId: customer,
+        page: 1,
+        limit: 100,
+        createdAt: new Date(),
+      } as FetchCustomerOrdersJobData,
+      opts: {
+        delay: index * 2000,
+      },
+    }));
+
+    if (orderJobs.length > 0) {
+      await queues[JobType.FETCH_CUSTOMER_ORDERS].addBulk(orderJobs);
+      logger.info(`✅ Queued ${orderJobs.length} order fetch jobs`);
+    }
 
     if (response.retorno.pagina < response.retorno.numero_paginas) {
       const nextPageJob = {

@@ -1,5 +1,6 @@
 import type { CustomersResponse, OlistCustomer } from "@/types/olist/contact";
-import type { OrderResponse } from "@/types/olist/order";
+import type { OlistOrder, OrderResponse } from "@/types/olist/order";
+import type { OlistProduct } from "@/types/olist/product";
 
 export class OlistApiService {
   private baseUrl = process.env.OLIST_API_URL || "https://api.tiny.com.br/api2";
@@ -69,6 +70,44 @@ export class OlistApiService {
     }
 
     const data = (await response.json()) as { retorno: OlistCustomer };
+    return data;
+  }
+
+  async fetchOrderById(orderId: string) {
+    const url = `${this.baseUrl}/pedido.obter.php?token=${this.apiKey}&formato=JSON&id=${orderId}`;
+
+    const response = await fetch(url, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 429) throw new Error("RATE_LIMITED");
+      throw new Error(`API Error: ${response.status}`);
+    }
+
+    const data = (await response.json()) as { retorno: { pedido: OlistOrder } };
+    return data;
+  }
+
+  async fetchProductById(productId: string) {
+    const url = `${this.baseUrl}/produto.obter.php?token=${this.apiKey}&formato=JSON&id=${productId}`;
+
+    const response = await fetch(url, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 429) throw new Error("RATE_LIMITED");
+      throw new Error(`API Error: ${response.status}`);
+    }
+
+    const data = (await response.json()) as {
+      retorno: { produto: OlistProduct };
+    };
     return data;
   }
 }

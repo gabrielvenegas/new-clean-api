@@ -1,9 +1,10 @@
+import type { Id } from "../../convex/_generated/dataModel";
+
 export interface Order {
-	order_id: string;
-	customer_id: string;
-	order_status: string;
-	order_purchase_timestamp: Date;
-	order_approved_at?: Date;
-	order_delivered_customer_date?: Date;
-	order_estimated_delivery_date?: Date;
+  olist_order_id: string;
+  olist_customer_id: string;
+  customer_id: Id<"customers">;
+  margin_percentage: number;
+  created_at: number;
+  updated_at: number;
 }

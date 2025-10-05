@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { internalQuery, mutation, query } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 
 export const batchInsert = mutation({
   args: {
@@ -137,5 +137,14 @@ export const deactivateCustomer = mutation({
     } catch (error) {
       throw new Error(`Failed to deactivate customer: ${error}`);
     }
+  },
+});
+
+export const getCustomerById = query({
+  args: {
+    id: v.id("customers"),
+  },
+  handler: async (ctx, { id }) => {
+    return await ctx.db.get(id);
   },
 });

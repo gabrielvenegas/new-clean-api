@@ -15,7 +15,8 @@ export interface BaseJobData {
 }
 
 export interface ProcessCustomerMarginsJobData extends BaseJobData {
-  customerId: string;
+  customerId: Id<"customers">;
+  olistCustomerId: string;
 }
 
 export interface FetchCustomersJobData extends BaseJobData {

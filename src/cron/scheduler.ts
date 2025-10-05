@@ -1,13 +1,13 @@
-import cron, { type ScheduledTask } from "node-cron";
+import type { Queue } from "bullmq";
 import type { ConvexHttpClient } from "convex/browser";
-import { api, internal } from "../../convex/_generated/api.js";
+import cron, { type ScheduledTask } from "node-cron";
+import { api } from "../../convex/_generated/api.js";
 import {
   JobType,
   type FetchCustomersJobData,
   type ProcessCustomerMarginsJobData,
 } from "../types/job.js";
 import { logger } from "../utils/logger.js";
-import type { Queue } from "bullmq";
 
 export class CronScheduler {
   private readonly queues: Map<JobType, Queue>;
@@ -39,7 +39,7 @@ export class CronScheduler {
 
   private scheduleCustomerDiscovery(): void {
     const job = cron.schedule(
-      "0 2 * * *",
+      "10 16 * * *",
       async () => {
         logger.info("🕰️  Cron: Starting daily customer discovery...");
 
@@ -69,12 +69,14 @@ export class CronScheduler {
     );
 
     this.scheduledJobs.push(job);
-    logger.info("➡️  Scheduled daily customer discovery job (2 AM daily)");
+    logger.info(
+      `➡️  Scheduled daily customer discovery job ${process.env.CRON_CUSTOMER_DISCOVERY}`,
+    );
   }
 
   private scheduleMarginCalculation(): void {
     const job = cron.schedule(
-      "0 */4 * * *",
+      "*/10 * * * *",
       async () => {
         logger.info("🕰️  Cron: Starting margin calculation...");
 
@@ -106,7 +108,8 @@ export class CronScheduler {
             name: `process-margin-${customer.olist_customer_id}`,
             data: {
               id: `margin-${customer.olist_customer_id}-${Date.now()}`,
-              customerId: customer.olist_customer_id,
+              customerId: customer._id,
+              olistCustomerId: customer.olist_customer_id,
               createdAt: new Date(),
             } as ProcessCustomerMarginsJobData,
           }));
@@ -123,6 +126,6 @@ export class CronScheduler {
     );
 
     this.scheduledJobs.push(job);
-    logger.info("➡️  Scheduled margin calculation job (every 4 hours)");
+    logger.info("➡️  Scheduled margin calculation job (every 10 minutes)");
   }
 }

@@ -1,4 +1,4 @@
-import { setupQueues, closeQueues, queues } from "../jobs/queue-setup.js";
+import { closeQueues, queues, setupQueues } from "../jobs/queue-setup.js";
 import { JobType, type FetchCustomersJobData } from "../types/job.js";
 import { logger } from "../utils/logger.js";
 
@@ -13,7 +13,7 @@ async function testCustomerPipeline() {
     const jobData: FetchCustomersJobData = {
       id: `customers-test-${Date.now()}`,
       page: 1,
-      limit: 5, // Very small for testing
+      limit: 5,
       createdAt: new Date(),
     };
 
