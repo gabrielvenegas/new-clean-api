@@ -39,7 +39,7 @@ export class CronScheduler {
 
   private scheduleCustomerDiscovery(): void {
     const job = cron.schedule(
-      "10 16 * * *",
+      "0 18 * * *",
       async () => {
         logger.info("🕰️  Cron: Starting daily customer discovery...");
 

@@ -56,6 +56,11 @@ export async function processCustomerOrders(
       olist_customer_id: convexCustomer.olist_customer_id,
       // @ts-ignore
       olist_order_id: String(order?.pedido.id),
+      order_date: (() => {
+        const [day, month, year] = order.pedido.data_pedido.split("/");
+        return new Date(`${year}-${month}-${day}`).getTime();
+      })(),
+      total_value: order.pedido.valor,
       created_at: Date.now(),
       updated_at: Date.now(),
     }));
@@ -74,6 +79,7 @@ export async function processCustomerOrders(
         } as FetchCustomerOrdersJobData,
         opts: {
           delay: 10000,
+          jobId: `orders-${customerId}-page-${page}`,
         },
       };
 
@@ -82,23 +88,24 @@ export async function processCustomerOrders(
         nextPageJob.data,
         nextPageJob.opts,
       );
+
       logger.info(
         `Queued next page for customer ${customerId}: ${page + 1}/${response.retorno.numero_paginas}`,
       );
     } else {
       logger.info(`✅ All order pages processed for customer ${customerId}!`);
-    }
 
-    await queues[JobType.PROCESS_CUSTOMER_MARGINS].add(
-      `calculate-margins-${customerId}`,
-      {
-        id: `margins-${customerId}-${Date.now()}`,
-        customerId,
-        olistCustomerId: convexCustomer.olist_customer_id,
-        createdAt: new Date(),
-      },
-      { delay: 5000 },
-    );
+      await queues[JobType.PROCESS_CUSTOMER_MARGINS].add(
+        `calculate-margins-${customerId}`,
+        {
+          id: `margins-${customerId}-${Date.now()}`,
+          customerId,
+          olistCustomerId: convexCustomer.olist_customer_id,
+          createdAt: new Date(),
+        },
+        { delay: 5000 },
+      );
+    }
 
     await job.updateProgress(
       Math.round((page / response.retorno.numero_paginas) * 100),

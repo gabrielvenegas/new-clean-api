@@ -1,4 +1,3 @@
-import { queuePendingOrderJobs } from "@/workers/order-orchestrator.worker.js";
 import { processCustomerOrders } from "@/workers/order.worker.js";
 import { processCustomerMargins } from "@/workers/process-customer-margins.worker.js";
 import { Queue, Worker } from "bullmq";
@@ -136,15 +135,6 @@ export async function setupQueues(): Promise<void> {
       },
     );
 
-    const orchestratorWorker = new Worker(
-      JobType.QUEUE_PENDING_ORDERS,
-      queuePendingOrderJobs,
-      {
-        connection: getRedisConnection(),
-        concurrency: 1,
-      },
-    );
-
     const processCustomerMarginsWorker = new Worker(
       JobType.PROCESS_CUSTOMER_MARGINS,
       processCustomerMargins,
@@ -155,12 +145,7 @@ export async function setupQueues(): Promise<void> {
     );
 
     workers.push(
-      ...[
-        customerWorker,
-        customerOrdersWorker,
-        orchestratorWorker,
-        processCustomerMarginsWorker,
-      ],
+      ...[customerWorker, customerOrdersWorker, processCustomerMarginsWorker],
     );
     // workers.push(
     //   ...[

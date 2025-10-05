@@ -75,6 +75,7 @@ export async function processCustomers(
         } as FetchCustomersJobData,
         opts: {
           delay: 10000,
+          jobId: `fetch-customers-page-${page + 1}`,
         },
       };
 

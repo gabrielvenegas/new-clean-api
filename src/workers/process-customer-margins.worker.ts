@@ -80,15 +80,24 @@ export async function processCustomerMargins(
 
 function calculatePeriodMargin(orders: Order[], fromTimestamp: number): number {
   const periodOrders = orders.filter(
-    (order) => order.created_at >= fromTimestamp,
+    (order) => new Date(order.order_date).getTime() >= fromTimestamp,
   );
 
   if (!periodOrders.length) return 0;
 
-  const avgMargin =
-    periodOrders.reduce((sum, order) => sum + order.margin_percentage, 0) /
-    periodOrders.length;
-  return Math.round(avgMargin * 100) / 100;
+  const totalRevenue = periodOrders.reduce(
+    (sum, order) => sum + order.total_value,
+    0,
+  );
+
+  if (totalRevenue === 0) return 0;
+
+  const weightedMargin = periodOrders.reduce(
+    (sum, order) => sum + order.margin_percentage * order.total_value,
+    0,
+  );
+
+  return Math.round((weightedMargin / totalRevenue) * 100) / 100;
 }
 
 async function calculateOrderMargin(olistOrderId: string): Promise<number> {

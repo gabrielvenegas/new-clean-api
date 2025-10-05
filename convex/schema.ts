@@ -17,8 +17,10 @@ export default defineSchema({
   orders: defineTable({
     olist_order_id: v.string(),
     olist_customer_id: v.string(),
-    customer_id: v.id("customers"), // Reference to customers table
+    customer_id: v.id("customers"),
     margin_percentage: v.number(),
+    order_date: v.number(),
+    total_value: v.number(),
     created_at: v.number(),
     updated_at: v.number(),
   })
