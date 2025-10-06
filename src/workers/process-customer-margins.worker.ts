@@ -102,7 +102,8 @@ function calculatePeriodMargin(orders: Order[], fromTimestamp: number): number {
 
 async function calculateOrderMargin(olistOrderId: string): Promise<number> {
   const MAX_RETRIES = 3;
-  const BASE_DELAY = 2000; // 2 seconds
+  const RETRY_BASE_DELAY = 5000;
+  const ITEM_DELAY = 1500;
 
   try {
     const order = await olistApiService.fetchOrderById(olistOrderId);
@@ -118,30 +119,31 @@ async function calculateOrderMargin(olistOrderId: string): Promise<number> {
       `Calculating margin for order ${olistOrderId} with ${items.length} items`,
     );
 
-    // Fetch product details with retry logic
     const itemsWithProductDetails: Array<{
-      item: Item;
+      item?: Item;
       productDetails: OlistProduct | null;
     }> = [];
 
-    for (const orderItem of items) {
-      const productId = orderItem.item.id_produto;
+    for (let i = 0; i < items.length; i++) {
+      const orderItem = items[i];
+      const productId = orderItem?.item.id_produto;
+
+      // Delay between items (not on first item)
+      if (i > 0) {
+        await new Promise((resolve) => setTimeout(resolve, ITEM_DELAY));
+      }
 
       let productDetails: OlistProduct | null = null;
-      let retryCount = 0;
 
-      while (retryCount <= MAX_RETRIES) {
+      for (let retryCount = 0; retryCount <= MAX_RETRIES; retryCount++) {
         try {
-          // Progressive delays: 2s, 4s, 8s
-          const delay = BASE_DELAY * 2 ** retryCount;
-          await new Promise((resolve) => setTimeout(resolve, delay));
-
           logger.info(
             `Fetching product ${productId} (attempt ${retryCount + 1})`,
           );
 
-          const productResponse =
-            await olistApiService.fetchProductById(productId);
+          const productResponse = await olistApiService.fetchProductById(
+            productId!,
+          );
           productDetails = productResponse?.retorno?.produto || null;
 
           if (productDetails) {
@@ -150,37 +152,33 @@ async function calculateOrderMargin(olistOrderId: string): Promise<number> {
             );
           }
 
-          break; // Success, exit retry loop
+          break; // Success
         } catch (error) {
-          retryCount++;
-
-          // Check if it's a rate limit error
           const isRateLimit =
-            // biome-ignore lint/suspicious/noExplicitAny: <explanation>
             (error as any).status === 429 ||
-            // @ts-ignore
             error.message?.includes("rate limit") ||
-            // @ts-ignore
             error.message?.includes("too many requests");
 
-          if (isRateLimit && retryCount <= MAX_RETRIES) {
-            const nextDelay = BASE_DELAY * 2 ** retryCount;
+          if (isRateLimit && retryCount < MAX_RETRIES) {
+            // Exponential backoff: 5s, 10s, 20s
+            const delay = RETRY_BASE_DELAY * 2 ** retryCount;
             logger.warn(
-              `Rate limited fetching product ${productId}. Retry ${retryCount}/${MAX_RETRIES} in ${nextDelay}ms`,
+              `Rate limited on product ${productId}. Retry ${retryCount + 1}/${MAX_RETRIES} in ${delay}ms`,
             );
+            await new Promise((resolve) => setTimeout(resolve, delay));
             continue;
           }
 
           logger.error(
-            `Failed to fetch product ${productId} after ${retryCount} attempts:`,
+            `Failed to fetch product ${productId} after ${retryCount + 1} attempts:`,
             error,
           );
-          break; // Give up on this product
+          break;
         }
       }
 
       itemsWithProductDetails.push({
-        item: orderItem.item,
+        item: orderItem?.item,
         productDetails,
       });
     }

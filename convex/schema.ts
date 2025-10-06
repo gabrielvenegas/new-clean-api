@@ -26,5 +26,6 @@ export default defineSchema({
   })
     .index("by_olist_order_id", ["olist_order_id"])
     .index("by_customer_id", ["customer_id"])
-    .index("by_olist_customer_id", ["olist_customer_id"]),
+    .index("by_olist_customer_id", ["olist_customer_id"])
+    .index("by_order_date", ["order_date"]),
 });
