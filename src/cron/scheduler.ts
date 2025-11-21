@@ -39,7 +39,7 @@ export class CronScheduler {
 
   private scheduleCustomerDiscovery(): void {
     const job = cron.schedule(
-      "27 0 * * *",
+      "0 5 * * *",
       async () => {
         logger.info("🕰️  Cron: Starting daily customer discovery...");
 
@@ -76,7 +76,7 @@ export class CronScheduler {
 
   private scheduleMarginCalculation(): void {
     const job = cron.schedule(
-      "15 23 * * *",
+      "40 23 * * *",
       async () => {
         logger.info("🕰️  Cron: Starting margin calculation...");
 
