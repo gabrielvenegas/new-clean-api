@@ -1,5 +1,5 @@
 import type { CustomersResponse, OlistCustomer } from "@/types/olist/contact";
-import type { OlistOrder, OrderResponse } from "@/types/olist/order";
+import type { OlistOrder, OlistOrderResponse } from "@/types/olist/order";
 import type { OlistProduct } from "@/types/olist/product";
 
 export class OlistApiService {
@@ -51,7 +51,25 @@ export class OlistApiService {
       throw new Error(`API Error: ${response.status}`);
     }
 
-    const data = (await response.json()) as OrderResponse;
+    const data = (await response.json()) as OlistOrderResponse;
+    return data;
+  }
+
+  async fetchCustomerOrdersByCpfCnpj(cpfCnpj: string, page = 1) {
+    const url = `${this.baseUrl}/pedidos.pesquisa.php?token=${this.apiKey}&formato=JSON&cpf_cnpj=${cpfCnpj}&pagina=${page}`;
+
+    const response = await fetch(url, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 429) throw new Error("RATE_LIMITED");
+      throw new Error(`API Error: ${response.status}`);
+    }
+
+    const data = (await response.json()) as OlistOrderResponse;
     return data;
   }
 

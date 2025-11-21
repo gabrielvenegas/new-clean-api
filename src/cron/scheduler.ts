@@ -14,8 +14,8 @@ export class CronScheduler {
   private readonly convex: ConvexHttpClient;
   private readonly scheduledJobs: ScheduledTask[] = [];
 
-  private static readonly STALENESS_THRESHOLD = 4 * 60 * 60 * 1000;
-  private static readonly BATCH_SIZE = 100;
+  private static readonly STALENESS_THRESHOLD = 0;
+  private static readonly BATCH_SIZE = 300;
 
   constructor(queues: Map<JobType, Queue>, convexClient: ConvexHttpClient) {
     this.queues = queues;
@@ -39,7 +39,7 @@ export class CronScheduler {
 
   private scheduleCustomerDiscovery(): void {
     const job = cron.schedule(
-      "30 18 * * *",
+      "27 0 * * *",
       async () => {
         logger.info("🕰️  Cron: Starting daily customer discovery...");
 
@@ -76,7 +76,7 @@ export class CronScheduler {
 
   private scheduleMarginCalculation(): void {
     const job = cron.schedule(
-      "*/10 * * * *",
+      "15 23 * * *",
       async () => {
         logger.info("🕰️  Cron: Starting margin calculation...");
 

@@ -22,7 +22,8 @@
     "convex": "^1.27.0",
     "fastify": "^4.24.3",
     "ioredis": "^5.3.2",
-    "node-cron": "^4.2.1"
+    "node-cron": "^4.2.1",
+    "p-queue": "^9.0.0"
   },
   "devDependencies": {
     "@types/bun": "latest",

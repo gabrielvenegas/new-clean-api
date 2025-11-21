@@ -27,8 +27,10 @@ export interface FetchCustomersJobData extends BaseJobData {
 export interface FetchCustomerOrdersJobData extends BaseJobData {
   customerId: Id<"customers">;
   olistCustomerId: string;
+  name: string;
   page: number;
   limit: number;
+  isRefresh?: boolean;
 }
 
 export interface FetchOrderProductsJobData extends BaseJobData {

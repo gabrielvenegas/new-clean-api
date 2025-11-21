@@ -129,8 +129,8 @@ export async function setupQueues(): Promise<void> {
         connection: getRedisConnection(),
         concurrency: 1,
         limiter: {
-          max: 5,
-          duration: 60 * 1000,
+          max: 1,
+          duration: 10 * 1000,
         },
       },
     );
@@ -141,6 +141,10 @@ export async function setupQueues(): Promise<void> {
       {
         connection: getRedisConnection(),
         concurrency: 1,
+        limiter: {
+          max: 1,
+          duration: 10000,
+        },
       },
     );
 

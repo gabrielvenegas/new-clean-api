@@ -1,8 +1,4 @@
-import {
-  JobType,
-  type FetchCustomerOrdersJobData,
-  type FetchCustomersJobData,
-} from "@/types/job.js";
+import { JobType, type FetchCustomersJobData } from "@/types/job.js";
 import type { Job } from "bullmq";
 import { queues } from "../jobs/queue-setup.js";
 import { ConvexService } from "../services/convex.service.js";
@@ -22,6 +18,11 @@ export async function processCustomers(
   try {
     const response = await olistApi.fetchCustomers(page, limit);
 
+    if (!response?.retorno?.contatos) {
+      logger.warn(`No response body or malformed data for page ${page}`);
+      return;
+    }
+
     logger.info(
       `Fetched ${response.retorno?.contatos?.length} customers from page ${page}`,
     );
@@ -38,35 +39,37 @@ export async function processCustomers(
     const transformedCustomers = companies.map((company) => ({
       olist_customer_id: company?.contato?.id,
       is_active: true,
+      name: company?.contato?.nome,
       created_at: Date.now(),
       updated_at: Date.now(),
     }));
 
-    const savedCustomers =
-      await convexService.saveCustomers(transformedCustomers);
+    await convexService.saveCustomers(transformedCustomers);
     logger.info(`Saved ${transformedCustomers.length} customers to Convex`);
 
-    const orderJobs = savedCustomers.map((customer, index) => ({
-      name: `fetch-orders-${customer}`,
-      data: {
-        customerId: customer,
-        page: 1,
-        limit: 100,
-        createdAt: new Date(),
-      } as FetchCustomerOrdersJobData,
-      opts: {
-        delay: index * 2000,
-      },
-    }));
+    // THIS WILL MOVE TO PROCESS CUSTOMER MARGINS
+    // const orderJobs = transformedCustomers.map((customer, index) => ({
+    //   name: `fetch-orders-${customer.olist_customer_id}`,
+    //   data: {
+    //     customerId: customer.olist_customer_id,
+    //     name: customer.name,
+    //     page: 1,
+    //     limit: 500,
+    //     createdAt: new Date(),
+    //   } as FetchCustomerOrdersJobData,
+    //   opts: {
+    //     delay: index * 2000,
+    //   },
+    // }));
 
-    if (orderJobs.length > 0) {
-      await queues[JobType.FETCH_CUSTOMER_ORDERS].addBulk(orderJobs);
-      logger.info(`✅ Queued ${orderJobs.length} order fetch jobs`);
-    }
+    // if (orderJobs.length > 0) {
+    //   await queues[JobType.FETCH_CUSTOMER_ORDERS].addBulk(orderJobs);
+    //   logger.info(`✅ Queued ${orderJobs.length} order fetch jobs`);
+    // }
 
     if (response.retorno.pagina < response.retorno.numero_paginas) {
       const nextPageJob = {
-        name: `fetch-customers-page-${page + 1}`,
+        name: `fetch-customers-page-${page + 1}-${Date.now()}`,
         data: {
           id: `customers-${page + 1}-${Date.now()}`,
           page: page + 1,
@@ -74,8 +77,7 @@ export async function processCustomers(
           createdAt: new Date(),
         } as FetchCustomersJobData,
         opts: {
-          delay: 10000,
-          jobId: `fetch-customers-page-${page + 1}`,
+          jobId: `fetch-customers-page-${page + 1}-${Date.now()}`,
         },
       };
 
@@ -92,7 +94,9 @@ export async function processCustomers(
     }
 
     await job.updateProgress(
-      Math.round((page / response.retorno.numero_paginas) * 100),
+      Math.round(
+        (page / Math.max(response.retorno?.numero_paginas || 1, 1)) * 100,
+      ),
     );
   } catch (error) {
     logger.error(`Customer worker failed for page ${page}:`, error);

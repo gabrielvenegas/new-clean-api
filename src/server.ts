@@ -12,8 +12,24 @@ let cronScheduler: CronScheduler;
 
 server.get("/health", async () => ({ status: "ok" }));
 
-server.get("/queue-status", async () => {
-  // Return queue statistics
+server.get("/queue", async () => {
+  const queueStats = {};
+  for (const [jobType, queue] of Object.entries(queues)) {
+    try {
+      const stats = await queue.getJobCounts(
+        "waiting",
+        "active",
+        "delayed",
+        "completed",
+        "failed",
+      );
+      (queueStats as any)[jobType] = stats;
+    } catch (error) {
+      server.log.error(`Error getting stats for queue ${jobType}:`, error);
+      (queueStats as any)[jobType] = { error: "Could not retrieve stats" };
+    }
+  }
+  return queueStats;
 });
 
 const start = async () => {

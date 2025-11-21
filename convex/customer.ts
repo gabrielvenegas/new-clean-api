@@ -114,6 +114,7 @@ export const getOutdatedCustomers = query({
       .filter((q) =>
         q.and(
           q.neq(q.field("is_active"), false),
+          q.eq(q.field("one_month_margin_percentage"), undefined),
           q.or(
             q.lt(q.field("margins_last_calculated"), thresholdTimestamp),
             q.eq(q.field("margins_last_calculated"), undefined),
@@ -126,14 +127,31 @@ export const getOutdatedCustomers = query({
 
 export const deactivateCustomer = mutation({
   args: {
-    id: v.id("customers"),
+    olistCustomerId: v.string(),
   },
-  handler: async (ctx, { id }) => {
+  handler: async (ctx, { olistCustomerId }) => {
     try {
-      return await ctx.db.patch(id, {
+      // First, find the customer by olist_customer_id
+      const customer = await ctx.db
+        .query("customers")
+        .withIndex("by_olist_id", (q) =>
+          q.eq("olist_customer_id", olistCustomerId),
+        )
+        .first();
+
+      if (!customer) {
+        throw new Error(
+          `Customer with olist_customer_id ${olistCustomerId} not found`,
+        );
+      }
+
+      // Then patch using the found customer's _id
+      await ctx.db.patch(customer._id, {
         is_active: false,
         updated_at: Date.now(),
       });
+
+      return true;
     } catch (error) {
       throw new Error(`Failed to deactivate customer: ${error}`);
     }

@@ -26,6 +26,17 @@ export class ConvexService {
     }
   }
 
+  async getCustomerByOlistId(olistCustomerId: string) {
+    try {
+      const customer = await this.client.query(api.customer.getByOlistId, {
+        olistCustomerId,
+      });
+      return customer;
+    } catch (error) {
+      throw new Error(`Failed to get customer by Olist ID: ${error}`);
+    }
+  }
+
   async saveCustomers(customers: Customer[]) {
     try {
       // Use the generated API, not string paths
@@ -85,10 +96,10 @@ export class ConvexService {
     }
   }
 
-  async deactivateCustomer(id: Id<"customers">) {
+  async deactivateCustomer(olistCustomerId: string) {
     try {
-      return await this.client.mutation(api.customer.deactivateCustomer, {
-        id,
+      return this.client.mutation(api.customer.deactivateCustomer, {
+        olistCustomerId,
       });
     } catch (error) {
       throw new Error(`Failed to deactivate customer: ${error}`);
@@ -97,18 +108,26 @@ export class ConvexService {
 
   async storeOrders(customerId: string, orders: Order[]) {
     try {
-      return await this.client.mutation(api.order.batchInsert, {
+      const convexCustomer = await this.client.query(
+        api.customer.getByOlistId,
+        {
+          olistCustomerId: customerId,
+        },
+      );
+
+      return this.client.mutation(api.order.batchInsert, {
         orders,
+        customerId: convexCustomer ? convexCustomer?._id! : customerId,
       });
     } catch (error) {
       throw new Error(`Failed to store orders: ${error}`);
     }
   }
 
-  async getOrdersByCustomerId(customerId: Id<"customers">) {
+  async getOrdersByCustomerId(id: Id<"customers">) {
     try {
-      return await this.client.query(api.order.getByCustomerId, {
-        customerId,
+      return this.client.query(api.order.getByCustomerId, {
+        customerId: id,
       });
     } catch (error) {
       throw new Error(`Failed to get orders by customer ID: ${error}`);

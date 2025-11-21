@@ -7,7 +7,7 @@ export const batchInsert = mutation({
       v.object({
         olist_order_id: v.string(),
         olist_customer_id: v.string(),
-        customer_id: v.id("customers"),
+        customer_id: v.string(),
         margin_percentage: v.number(),
         order_date: v.number(),
         total_value: v.number(),
@@ -15,8 +15,9 @@ export const batchInsert = mutation({
         updated_at: v.number(),
       }),
     ),
+    customerId: v.id("customers"),
   },
-  handler: async (ctx, { orders }) => {
+  handler: async (ctx, { orders, customerId }) => {
     const results = [];
 
     for (const order of orders) {
@@ -28,7 +29,10 @@ export const batchInsert = mutation({
         .first();
 
       if (!existing) {
-        const id = await ctx.db.insert("orders", order);
+        const id = await ctx.db.insert("orders", {
+          ...order,
+          customer_id: customerId,
+        });
         results.push(id);
       }
     }
