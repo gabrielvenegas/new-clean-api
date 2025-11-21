@@ -15,7 +15,7 @@ export class CronScheduler {
   private readonly scheduledJobs: ScheduledTask[] = [];
 
   private static readonly STALENESS_THRESHOLD = 0;
-  private static readonly BATCH_SIZE = 300;
+  private static readonly BATCH_SIZE = 500;
 
   constructor(queues: Map<JobType, Queue>, convexClient: ConvexHttpClient) {
     this.queues = queues;
@@ -88,9 +88,9 @@ export class CronScheduler {
 
         try {
           const outdatedCustomers = await this.convex.query(
-            api.customer.getOutdatedCustomers,
+            api.customer.getAllCustomers,
             {
-              stalenessThreshold: CronScheduler.STALENESS_THRESHOLD,
+              // stalenessThreshold: CronScheduler.STALENESS_THRESHOLD,
               limit: CronScheduler.BATCH_SIZE,
             },
           );

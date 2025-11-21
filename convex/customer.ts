@@ -125,6 +125,18 @@ export const getOutdatedCustomers = query({
   },
 });
 
+export const getAllCustomers = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, { limit }) => {
+    if (limit) {
+      return await ctx.db.query("customers").take(limit);
+    }
+    return await ctx.db.query("customers").collect();
+  },
+});
+
 export const deactivateCustomer = mutation({
   args: {
     olistCustomerId: v.string(),
