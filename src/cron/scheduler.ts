@@ -17,12 +17,6 @@ export class CronScheduler {
   private static readonly STALENESS_THRESHOLD = 0;
   private static readonly BATCH_SIZE = 500;
 
-  // pick defaults, override with env vars if present
-  private static readonly CRON_CUSTOMER_DISCOVERY =
-    process.env.CRON_CUSTOMER_DISCOVERY ?? "0 20 * * *"; // 20:00 local
-  private static readonly CRON_MARGIN_CALC =
-    process.env.CRON_MARGIN_CALC ?? "0 23 * * *"; // 22:00 local
-
   constructor(queues: Map<JobType, Queue>, convexClient: ConvexHttpClient) {
     this.queues = queues;
     this.convex = convexClient;
@@ -30,19 +24,6 @@ export class CronScheduler {
 
   public start(): void {
     logger.info("▶️  Starting cron scheduler...");
-
-    // validate expressions
-    if (!cron.validate(CronScheduler.CRON_CUSTOMER_DISCOVERY)) {
-      throw new Error(
-        `Invalid cron expression for discovery: ${CronScheduler.CRON_CUSTOMER_DISCOVERY}`,
-      );
-    }
-    if (!cron.validate(CronScheduler.CRON_MARGIN_CALC)) {
-      throw new Error(
-        `Invalid cron expression for margin calc: ${CronScheduler.CRON_MARGIN_CALC}`,
-      );
-    }
-
     this.scheduleCustomerDiscovery();
     this.scheduleMarginCalculation();
     logger.info("✅ Cron scheduler started with all jobs.");
@@ -57,9 +38,8 @@ export class CronScheduler {
   }
 
   private scheduleCustomerDiscovery(): void {
-    const expr = CronScheduler.CRON_CUSTOMER_DISCOVERY;
     const job = cron.schedule(
-      expr,
+      "0 20 * * *",
       async () => {
         logger.info("🕰️  Cron: Starting daily customer discovery...");
 
@@ -89,13 +69,14 @@ export class CronScheduler {
     );
 
     this.scheduledJobs.push(job);
-    logger.info(`➡️  Scheduled daily customer discovery: ${expr}`);
+    logger.info(
+      `➡️  Scheduled daily customer discovery job ${process.env.CRON_CUSTOMER_DISCOVERY}`,
+    );
   }
 
   private scheduleMarginCalculation(): void {
-    const expr = CronScheduler.CRON_MARGIN_CALC;
     const job = cron.schedule(
-      expr,
+      "0 23 * * *",
       async () => {
         logger.info("🕰️  Cron: Starting margin calculation...");
 
@@ -145,6 +126,6 @@ export class CronScheduler {
     );
 
     this.scheduledJobs.push(job);
-    logger.info(`➡️  Scheduled margin calculation: ${expr}`);
+    logger.info("➡️  Scheduled margin calculation job (every 10 minutes)");
   }
 }
