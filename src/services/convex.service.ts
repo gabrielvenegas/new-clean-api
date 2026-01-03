@@ -17,7 +17,7 @@ export class ConvexService {
 
   async getCustomerById(id: Id<"customers">) {
     try {
-      const customer = await this.client.query(api.customer.getCustomerById, {
+      const customer = await this.client.query(api.customers.getCustomerById, {
         id,
       });
       return customer;
@@ -28,7 +28,7 @@ export class ConvexService {
 
   async getCustomerByOlistId(olistCustomerId: string) {
     try {
-      const customer = await this.client.query(api.customer.getByOlistId, {
+      const customer = await this.client.query(api.customers.getByOlistId, {
         olistCustomerId,
       });
       return customer;
@@ -40,7 +40,7 @@ export class ConvexService {
   async saveCustomers(customers: Customer[]) {
     try {
       // Use the generated API, not string paths
-      return await this.client.mutation(api.customer.batchInsert, {
+      return await this.client.mutation(api.customers.batchInsert, {
         customers,
       });
     } catch (error) {
@@ -50,7 +50,7 @@ export class ConvexService {
 
   async getCustomerExists(olistCustomerId: string): Promise<boolean> {
     try {
-      const customer = await this.client.query(api.customer.getByOlistId, {
+      const customer = await this.client.query(api.customers.getByOlistId, {
         olistCustomerId,
       });
       return !!customer;
@@ -61,7 +61,7 @@ export class ConvexService {
 
   async getCustomerCount(): Promise<number> {
     try {
-      return await this.client.query(api.customer.getCount);
+      return await this.client.query(api.customers.getCount);
     } catch (error) {
       throw new Error(`Failed to get customer count: ${error}`);
     }
@@ -69,7 +69,7 @@ export class ConvexService {
 
   async getPendingMarginCustomers() {
     try {
-      return await this.client.query(api.customer.getOutdatedCustomers, {
+      return await this.client.query(api.customers.getOutdatedCustomers, {
         stalenessThreshold: 4 * 60 * 60 * 1000,
         limit: 300,
       });
@@ -87,7 +87,7 @@ export class ConvexService {
     },
   ) {
     try {
-      return await this.client.mutation(api.customer.updateMargins, {
+      return await this.client.mutation(api.customers.updateMargins, {
         olistCustomerId,
         ...margins,
       });
@@ -98,7 +98,7 @@ export class ConvexService {
 
   async deactivateCustomer(olistCustomerId: string) {
     try {
-      return this.client.mutation(api.customer.deactivateCustomer, {
+      return this.client.mutation(api.customers.deactivateCustomer, {
         olistCustomerId,
       });
     } catch (error) {
@@ -109,14 +109,15 @@ export class ConvexService {
   async storeOrders(customerId: string, orders: Order[]) {
     try {
       const convexCustomer = await this.client.query(
-        api.customer.getByOlistId,
+        api.customers.getByOlistId,
         {
           olistCustomerId: customerId,
         },
       );
 
-      return this.client.mutation(api.order.batchInsert, {
+      return this.client.mutation(api.orders.batchInsert, {
         orders,
+        // @ts-ignore
         customerId: convexCustomer ? convexCustomer?._id! : customerId,
       });
     } catch (error) {
@@ -126,7 +127,7 @@ export class ConvexService {
 
   async getOrdersByCustomerId(id: Id<"customers">) {
     try {
-      return this.client.query(api.order.getByCustomerId, {
+      return this.client.query(api.orders.getByCustomerId, {
         customerId: id,
       });
     } catch (error) {
@@ -136,7 +137,7 @@ export class ConvexService {
 
   async updateOrderMargins(orders: { id: Id<"orders">; margin: number }[]) {
     try {
-      return await this.client.mutation(api.order.updateOrderMargin, {
+      return await this.client.mutation(api.orders.updateOrderMargin, {
         orders,
       });
     } catch (error) {

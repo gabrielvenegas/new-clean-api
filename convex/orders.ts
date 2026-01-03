@@ -103,3 +103,23 @@ export const updateOrderMargin = mutation({
     return results;
   },
 });
+
+export const getBatchOrders = query({
+  args: {
+    olistOrderIds: v.array(v.string()),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, { olistOrderIds, limit }) => {
+    const orders = await Promise.all(
+      olistOrderIds.slice(0, limit).map(async (olistOrderId) => {
+        return await ctx.db
+          .query("orders")
+          .withIndex("by_olist_order_id", (q) =>
+            q.eq("olist_order_id", olistOrderId),
+          )
+          .first();
+      }),
+    );
+    return orders.filter((order) => order !== null);
+  },
+});

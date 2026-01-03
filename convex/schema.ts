@@ -8,6 +8,7 @@ export default defineSchema({
     one_year_margin_percentage: v.optional(v.number()),
     historical_margin_percentage: v.optional(v.number()),
     margins_last_calculated: v.optional(v.number()),
+    name: v.optional(v.string()),
     is_active: v.boolean(),
     created_at: v.number(),
     updated_at: v.number(),

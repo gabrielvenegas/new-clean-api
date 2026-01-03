@@ -6,6 +6,7 @@ export const batchInsert = mutation({
     customers: v.array(
       v.object({
         olist_customer_id: v.string(),
+        name: v.optional(v.string()),
         one_month_margin_percentage: v.optional(v.number()),
         one_year_margin_percentage: v.optional(v.number()),
         historical_margin_percentage: v.optional(v.number()),
