@@ -76,7 +76,7 @@ export class CronScheduler {
 
   private scheduleMarginCalculation(): void {
     const job = cron.schedule(
-      "0 23 * * *",
+      "15 23 * * *",
       async () => {
         logger.info("🕰️  Cron: Starting margin calculation...");
 
