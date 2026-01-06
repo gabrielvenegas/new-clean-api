@@ -16,13 +16,11 @@ export class CronScheduler {
 
   private static readonly BATCH_SIZE = 500;
 
-  // Read from env with defaults
   private static readonly CUSTOMER_DISCOVERY_SCHEDULE =
     process.env.CRON_CUSTOMER_DISCOVERY || "0 20 * * *";
   private static readonly MARGIN_CALCULATION_SCHEDULE =
     process.env.CRON_MARGIN_CALCULATION || "15 23 * * *";
   private static readonly TIMEZONE = process.env.TZ || "America/Sao_Paulo";
-  // Set to "true" to run jobs immediately on startup
   private static readonly RUN_ON_STARTUP =
     process.env.CRON_RUN_ON_STARTUP === "true";
 
@@ -81,9 +79,9 @@ export class CronScheduler {
       async () => {
         await this.executeCustomerDiscovery();
       },
-      {
-        timezone: CronScheduler.TIMEZONE,
-      },
+      // {
+      //   timezone: CronScheduler.TIMEZONE,
+      // },
     );
 
     this.scheduledJobs.push(job);
@@ -99,7 +97,7 @@ export class CronScheduler {
         await this.executeMarginCalculation();
       },
       {
-        timezone: CronScheduler.TIMEZONE,
+        // timezone: CronScheduler.TIMEZONE,
       },
     );
 
