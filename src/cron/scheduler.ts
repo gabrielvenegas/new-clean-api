@@ -79,9 +79,6 @@ export class CronScheduler {
       async () => {
         await this.executeCustomerDiscovery();
       },
-      // {
-      //   timezone: CronScheduler.TIMEZONE,
-      // },
     );
 
     this.scheduledJobs.push(job);
@@ -95,9 +92,6 @@ export class CronScheduler {
       CronScheduler.MARGIN_CALCULATION_SCHEDULE,
       async () => {
         await this.executeMarginCalculation();
-      },
-      {
-        // timezone: CronScheduler.TIMEZONE,
       },
     );
 
