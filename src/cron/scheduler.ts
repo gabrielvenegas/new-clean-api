@@ -20,7 +20,7 @@ export class CronScheduler {
     process.env.CRON_CUSTOMER_DISCOVERY || "0 20 * * *";
   private static readonly MARGIN_CALCULATION_SCHEDULE =
     process.env.CRON_MARGIN_CALCULATION || "15 23 * * *";
-  private static readonly TIMEZONE = process.env.TZ || "America/Sao_Paulo";
+  private static readonly TIMEZONE = process.env.TZ || "UTC";
   private static readonly RUN_ON_STARTUP =
     process.env.CRON_RUN_ON_STARTUP === "true";
 
@@ -39,14 +39,17 @@ export class CronScheduler {
       `📅 Margin Calculation: ${CronScheduler.MARGIN_CALCULATION_SCHEDULE}`,
     );
 
+    logger.info(`Test Date: ${new Date().toISOString()}`);
+    logger.info(`Test Date value: ${new Date().getTime()}`);
+
     this.scheduleCustomerDiscovery();
     this.scheduleMarginCalculation();
 
     if (CronScheduler.RUN_ON_STARTUP) {
       logger.info("🚀 RUN_ON_STARTUP enabled, triggering jobs now...");
-      this.triggerCustomerDiscovery().catch((err) =>
-        logger.error("❌ Startup customer discovery failed:", err),
-      );
+      // this.triggerCustomerDiscovery().catch((err) =>
+      //   logger.error("❌ Startup customer discovery failed:", err),
+      // );
       this.triggerMarginCalculation().catch((err) =>
         logger.error("❌ Startup margin calculation failed:", err),
       );
@@ -92,6 +95,9 @@ export class CronScheduler {
       CronScheduler.MARGIN_CALCULATION_SCHEDULE,
       async () => {
         await this.executeMarginCalculation();
+      },
+      {
+        timezone: CronScheduler.TIMEZONE,
       },
     );
 
