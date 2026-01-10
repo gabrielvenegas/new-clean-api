@@ -9,10 +9,10 @@ services:
       - REDIS_PORT=6379
       - CONVEX_URL=https://wry-bobcat-240.convex.cloud
       - OLIST_API_KEY=328caf8acea774903bc8d88fbdab51eb509420ee77e443e3aac7f1a6396e216f
-      - CRON_CUSTOMER_DISCOVERY="0 2 * * *"
-      - CRON_MARGIN_CALCULATION="15 23 * * *"
-      - TZ="America/Sao_Paulo"
-      - CRON_RUN_ON_STARTUP="true"
+      - CRON_CUSTOMER_DISCOVERY=0 2 * * *
+      - CRON_MARGIN_CALCULATION=15 23 * * *
+      - TZ=America/Sao_Paulo
+      - CRON_RUN_ON_STARTUP=true
     networks:
       - new-clean-api-network
 
